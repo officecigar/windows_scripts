@@ -1,4 +1,4 @@
-﻿Write-Host "                                                                                                                                                            "  -ForegroundColor Green -BackgroundColor black
+Write-Host "                                                                                                                                                            "  -ForegroundColor Green -BackgroundColor black
 Write-Host "                                                                                                                                                            "  -ForegroundColor Green -BackgroundColor black 
 Write-Host "                                                                                                                                                            "  -ForegroundColor Green -BackgroundColor black
 Write-Host "                                                                                                                                                            "  -ForegroundColor Green -BackgroundColor black 
@@ -29,24 +29,6 @@ for ($i=1;$i -le $processes.count; $i++) {
 $selection = $menu.Item($ans)
 Write-Host ""
 
-Get-ChildItem -Path C:\Temp\toolsbox\testmenulist  -name $selection | Select * 
+Get-ChildItem -Path C:\Temp\toolsbox\testmenulist  -name $selection | Start-Process PowerShell.exe -argument "-noexit -nologo -noprofile -command c:\Temp\toolsbox\testmenulist\$selection"
 
 powershell.exe C:\Temp\toolsbox\met1.ps1 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
