@@ -1,23 +1,26 @@
-﻿#################################################################################
+#################################################################################
 # get all the servers in your domain and output to a txt file and clean txt file by removing spaces and blanks lines.
 #
 ################################################################################
-$adserverlist = Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' ` -Properties Name| Sort-Object -Property Operatingsystem |Select-Object -Property Name
-#$adserverlist = Get-ADComputer -Filter {OperatingSystem -like "*windows*server*"} -Properties * | sort name | ft Name
-$adserverlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\00serverlist.txt"
-Get-Content -path C:\temp\00ServerList.txt | Select-Object -Skip 1  | Out-File C:\temp\01ServerList.txt
+ $starttime =Get-Date
 
-$InputFile = 'C:\temp\01ServerList.txt'
+$adserverlist = Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' ` -Properties dnshostname | Sort-Object -Property Operatingsystem |Select-Object -Property dnshostname | ForEach-Object {$_.dnshostname   }
+$adserverlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\serverlist.txt"
+
+$ServerInputFile = 'C:\temp\serverlist.txt'
 sleep 3
-write-host "Please wait cleaning up text file by removing spaces... file name le $InputFile"
-$content = Get-Content $InputFile
-$content | Foreach {$_.TrimEnd()  } | Set-Content C:\temp\ServerList.txt
+write-host "Please wait cleaning up text file by removing spaces... file name le $ServerInputFile"
+$content = Get-Content $ServerInputFile
 
-write-host ""
-write-host "Cleaning is finished!"
-sleep 2
-start-process "cmd.exe" "/c C:\temp\blanlines.bat"
-sleep 5
+
+$adOSlist = Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' ` -Properties  Operatingsystem | Sort-Object -Property Operatingsystem |Select-Object -Property  Operatingsystem | ForEach-Object {$_.Operatingsystem   }
+$adOSlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\osList.txt"
+
+$OSInputFile = 'C:\temp\osList.txt'
+sleep 3
+write-host "Please wait cleaning up text file by removing spaces... file name le $OSInputFile"
+$content = Get-Content $OSInputFile
+
 
 
 #################################################################################
@@ -25,17 +28,24 @@ sleep 5
 #
 ################################################################################
 $ServerListFilePath = "C:\temp\serverlist.txt"
-$ServerList = Get-Content $ServerListFilePath -ErrorAction SilentlyContinue
+$ossystems = Get-Content "C:\temp\OSlist.txt"
+$ServerList = Get-Content $ServerListFilePath 
 $ReportFilePath = "C:\temp\Report.html"
 $Result = @()
 
 
 ForEach($ComputerName in $ServerList)
-{
+{$ComputerName
 
 $AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average | Select Average
 
-$OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
+#$OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
+foreach($ossystem in $ossystems)
+{
+$OS = $ossystem
+}
+
+
 
 $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" |
 
@@ -43,6 +53,11 @@ Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.free
 
 $lastpatch = Get-WmiObject -ComputerName $ComputerName Win32_Quickfixengineering | select  @{Name="InstalledOn";Expression={$_.InstalledOn -as [datetime]}} | Sort-Object -Property Installedon | select-object -property installedon -last 1
 $lastpatch =Get-Date $lastpatch.InstalledOn -format MM-dd-yyyy
+
+$LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property @{n='HotFix ID';e={$_.hotfixid}}, @{n='Installation Date';e={$_.installedon}} | select -Last 01
+
+
+
 
 $LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime
 
@@ -56,15 +71,35 @@ $PysicalMemory = [Math]::Round((Get-WmiObject -Class Win32_ComputerSystem -Compu
 
 $windowsVersions =(Get-WmiObject -class Win32_OperatingSystem -ComputerName $ComputerName).Caption
 
-  if (Test-Connection -ComputerName $ComputerName -Count 1 -ErrorAction SilentlyContinue){
-   #$pingServer+= "$ComputerName,up"
+  if (Test-Connection -ComputerName $ComputerName -Count 1 ){
+   
    $PingStatus= "Up"
   }
   else{
-    #$pingServer+= "$ComputerName,down"
+    
      $PingStatus= "Down"
   }
   
+
+ $virtualorPhysical = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $ComputerName | Select-Object Manufacturer | ForEach-Object {$_.Manufacturer}
+ $virtual ="VMware, Inc."
+ $virtual1 ="Manufacturer : VMware, Inc."
+ 
+  if (Compare-Object "$virtualorPhysical" "$virtual" )
+  {
+   
+   "$virtualorPhysical"
+
+  }
+ 
+  else{
+    
+   "$virtualorPhysical"
+  }
+ 
+
+
+
 
 
 #################################################################################
@@ -96,6 +131,9 @@ $Result += [PSCustomObject] @{
 
         PINGtest = $PingStatus
 
+        VirtulorPhysical = $virtualorPhysical
+
+        LastKB = $LatestPatchInformation
         
 
     }
@@ -129,12 +167,16 @@ $Result += [PSCustomObject] @{
 
                         <TD><B>Total RAM</B></TD>
 
-                        <TD><B>Last Boot Time</B></TD>
+                        <TD><B>Last Reboot Time</B></TD>
 
                          <TD><B>OS Version</B></TD>
                          
                         <TD><B>Server up or down</B></TD> 
+
+                        <TD><B>Virtual or Physical</B></TD> 
                         
+                        <TD><B>Last KB</B></TD>
+
                         <TD><B>Last Patch date</B></TD>
 
                           
@@ -162,11 +204,16 @@ $Result += [PSCustomObject] @{
 
           $mybootime = "$($Entry.LAstBootTime)"
 
-          $patched_date = "$($Entry.patched_date)"
+          $patcheddate = "$($Entry.patched_date)"
 
           $OSVersion = "$($Entry.OSVersion)"
 
           $PingStatus = "$($Entry.PINGtest)"
+
+          $virtualorPhysical="$($Entry.VirtulorPhysical)"
+
+          $LatestPatchInformation ="$($Entry.LastKB)"
+
 
           $OutputReport += "<TR><TD>$($Entry.Servername)</TD>"
 
@@ -174,8 +221,7 @@ $Result += [PSCustomObject] @{
 # loading the data into HTML file
 #
 ################################################################################
-
-          # check CPU load
+# check CPU load
 
           if(($Entry.CPULoad) -eq '%')
 
@@ -204,8 +250,8 @@ $Result += [PSCustomObject] @{
          
 
  
-
-          # check RAM load
+#################################################################################
+# check RAM load
 
           if(($Entry.MemLoad) -eq "10")
 
@@ -232,8 +278,8 @@ $Result += [PSCustomObject] @{
           }
 
  
-
-          # check C: Drive Usage
+#################################################################################
+# check C: Drive Usage
 
           if(($Entry.CDrive) -le 1.00)
 
@@ -260,10 +306,10 @@ $Result += [PSCustomObject] @{
           }
 
  
-
  
 
-          # check CPU Count
+#################################################################################
+# check CPU Count
 
           if(($Entry.TotalCPUCount) -ge 99)
 
@@ -291,7 +337,8 @@ $Result += [PSCustomObject] @{
 
  
 
-          # check Total Memory
+#################################################################################
+# check Total Memory
 
           if(($Entry.totalMemCount) -lt 2)
 
@@ -316,7 +363,12 @@ $Result += [PSCustomObject] @{
               $OutputReport += "<TD bgcolor=lightgreen align=center>$($TMemCount)</TD>"
 
            }
-          # My last boot up time
+
+
+
+
+#################################################################################
+# # My last boot up time
 
           if(($Entry.LAstBootTime) -le 3)
 
@@ -373,7 +425,10 @@ $Result += [PSCustomObject] @{
 
            }
 
-     # Server ping test
+
+
+#################################################################################
+# Server ping test
 
           if(($Entry.PINGtest) -ne "UP")
 
@@ -401,23 +456,22 @@ $Result += [PSCustomObject] @{
 
 
 
+#################################################################################
+# Is it Virtual or Physical
 
-
-# check PATCHED 
-
-          if(($Entry.patched_date) -ge 3)
+          if(($Entry.VirtulorPhysical) -ne "VMware, Inc.")
 
           {
 
-              $OutputReport += "<TD bgcolor=E41B17 align=center>$($patched_date)</TD>"
+              $OutputReport += "<TD bgcolor=E41B17 align=center>$($virtualorPhysical)</TD>"
 
           }
 
-          elseif((($Entry.patched_date) -ge 3) -and (($Entry.patched_date) -lt 3))
+          elseif((($Entry.VirtulorPhysical) -ne "VMware, Inc.") -and (($Entry.VirtulorPhysical) -ne  "VMware, Inc."))
 
           {
 
-              $OutputReport += "<TD bgcolor=yellow align=center>$($patched_date)</TD>"
+              $OutputReport += "<TD bgcolor=yellow align=center>$($virtualorPhysical)</TD>"
 
           }
 
@@ -425,7 +479,63 @@ $Result += [PSCustomObject] @{
 
           {
 
-              $OutputReport += "<TD bgcolor=lightgreen align=center>$($patched_date)</TD>"
+              $OutputReport += "<TD bgcolor=lightgreen align=center>$($virtualorPhysical)</TD>"
+
+          }
+
+#################################################################################
+# last KB
+
+          if(($Entry.LastKB) -like " ")
+           
+          {
+
+              $OutputReport += "<TD bgcolor=E41B17 align=center>$($LatestPatchInformation)</TD>"
+
+          }
+
+          elseif((($Entry.LastKB) -ne "@{HotFix*") -and (($Entry.LastKB) -ne "HotFix"))
+
+          {
+
+              $OutputReport += "<TD bgcolor=yellow align=center>$($LatestPatchInformation)</TD>"
+
+          }
+
+          else
+
+          {
+
+              $OutputReport += "<TD bgcolor=lightgreen align=center>$($LatestPatchInformation)</TD>"
+
+          }
+
+
+
+#################################################################################
+# check PATCHED 
+
+          if(($Entry.patched_date) -ge 3)
+
+          {
+
+              $OutputReport += "<TD bgcolor=E41B17 align=center>$($patcheddate)</TD>"
+
+          }
+
+          elseif((($Entry.patched_date) -ge 3) -and (($Entry.patched_date) -lt 3))
+
+          {
+
+              $OutputReport += "<TD bgcolor=yellow align=center>$($patcheddate)</TD>"
+
+          }
+
+          else
+
+          {
+
+              $OutputReport += "<TD bgcolor=lightgreen align=center>$($patcheddate)</TD>"
 
           }
 
@@ -436,12 +546,8 @@ $Result += [PSCustomObject] @{
 
 
 
-
-
-
-
-
-
+#################################################################################
+#  
 
 
 
@@ -461,5 +567,9 @@ $Result += [PSCustomObject] @{
  
 
 $OutputReport | out-file $ReportFilePath
+
+$endtime =Get-Date
+$total= $endtime -$starttime
+Write-host "Total Script time to run $total" -ForegroundColor Yellow | ft -AutoSize 
 
 Invoke-Expression $ReportFilePath
