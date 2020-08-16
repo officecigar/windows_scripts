@@ -51,13 +51,8 @@ $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "Dr
 
 Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
 
-$lastpatch = Get-WmiObject -ComputerName $ComputerName Win32_Quickfixengineering | select  @{Name="InstalledOn";Expression={$_.InstalledOn -as [datetime]}} | Sort-Object -Property Installedon | select-object -property installedon -last 1
-$lastpatch =Get-Date $lastpatch.InstalledOn -format MM-dd-yyyy
-
-$LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property @{n='HotFix ID';e={$_.hotfixid}}, @{n='Installation Date';e={$_.installedon}} | select -Last 01
-
-
-
+$lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 05 | Sort-Object -Descending
+$LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 05 | Sort-Object -Descending
 
 $LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime
 
