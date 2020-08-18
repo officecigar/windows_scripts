@@ -46,13 +46,11 @@ $OS = $ossystem
 }
 
 
-
-$vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" |
-
-Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
-
+$vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
+$totalVol = Get-WmiObject -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
 $lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 05 | Sort-Object -Descending
 $LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 05 | Sort-Object -Descending
+
 
 $LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime
 
@@ -114,6 +112,8 @@ $Result += [PSCustomObject] @{
 
         CDrive = $vol.'C PercentUsed'
 
+        CCapacity = $totalVol.'C Capacity'
+        
         TotalCPUCount= $Cores
 
         totalMemCount= $PysicalMemory
@@ -144,8 +144,11 @@ $Result += [PSCustomObject] @{
 
                      <font color =""#99000"">
 
-                     <H2>$company Weekly Server Health Check Report</H2></font>
+                      <font color =""#99000"">
 
+                     <H2><B>Current Domain: $whatdomain - Script total time: $total </B></H2></font>
+                     <H2><B>Script started at: $starttime and Script ended at: $endtime </B></H2></font>
+                     <H2><B>Weekly Server Health Check Report</B></H2></font>
                      <Table border=2 cellpadding=4 cellspacing=3>
 
                      <TR bgcolor=D1D0CE align=center>
@@ -157,6 +160,8 @@ $Result += [PSCustomObject] @{
                        <TD><B> Avg. Memory Usage</B></TD>
 
                        <TD><B>Free DiskSpace c:\</B></TD>
+                       
+                       <TD><B>Total C:\ Capacity</B></TD>
 
                        <TD><B>Total #  CPUs</B></TD>
 
@@ -192,6 +197,8 @@ $Result += [PSCustomObject] @{
           $MemAsPercent = "$($Entry.MemLoad)%"
 
           $CDriveAsPercent = "$($Entry.CDrive)"
+          
+          $CCapacitydrive = "$($Entry.CCapacity)"
 
           $TCPUCount="$($Entry.TotalCPUCount)"
 
@@ -300,7 +307,36 @@ $Result += [PSCustomObject] @{
 
           }
 
- 
+
+
+################################################################################
+# C  drive capacity  
+
+          if(($Entry.CCapacity) -eq '0')
+
+          {
+
+              $OutputReport += "<TD bgcolor=E41B17 align=center>$($CCapacitydrive)</TD>"
+
+          }
+
+          elseif((($Entry.CCapacity) -ge 40) -and (($Entry.CCapacity) -lt 100))
+
+          {
+
+              $OutputReport += "<TD bgcolor=yellow align=center>$($CCapacitydrive)</TD>"
+
+          }
+
+          else
+
+          {
+
+              $OutputReport += "<TD bgcolor=lightgreen align=center>$($CCapacitydrive)</TD>"
+
+          } 
+          
+          
  
 
 #################################################################################
