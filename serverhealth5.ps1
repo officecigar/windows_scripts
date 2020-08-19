@@ -32,8 +32,7 @@ $ServerInputFile = "C:\temp\$whatdomain.serverlist.txt"
 # server list is in being imported and beginning grabbing number of CPU, total ram count, C:\ drive Frees DISK space, averages for CPU usage, & averages for memory  usage
 #
 ################################################################################
-#$ServerListFilePath = "C:\temp\$whatdomain.serverlist.txt"
-$ServerList = Get-Content "C:\temp\$whatdomain.serverlist.txt"                  #$ServerListFilePath 
+$ServerList = Get-Content "C:\temp\$whatdomain.serverlist.txt"                  
 $ReportFilePath = "C:\temp\$whatdomain.Report.html"
 $Result = @()
 
@@ -137,7 +136,7 @@ $Result += [PSCustomObject] @{
                      <font color =""#99000"">
 
                      <H2><B>Current Domain: $whatdomain </B></H2></font>
-                     <H2><B>Daily Health Check Report</B></H2></font>
+                     <H2><B>Daily Server Health Check Report</B></H2></font>
                      <Table border=2 cellpadding=4 cellspacing=3>
 
                      <TR bgcolor=D1D0CE align=center>
