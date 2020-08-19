@@ -26,6 +26,7 @@ ForEach($ComputerName in $ServerList)
 
 $AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average | Select Average 
 $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
+$OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
 $totalVol = Get-WmiObject -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
 $lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 05 | Sort-Object -Descending
 $LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 05 | Sort-Object -Descending
