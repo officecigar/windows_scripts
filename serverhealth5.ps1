@@ -1,3 +1,20 @@
+ <#
+.SYNOPSIS
+Think powershell think Mr-ITpro.com !!! FUN STUFF
+.EXAMPLE
+'one', 'two', 'three' TonyB_default.ps1
+.EXAMPLE
+TonyB_default.ps1 -computername localhost
+.EXAMPLE
+TonyB_default.ps1 -computername one, two, three
+.EXAMPLE
+get-content <Somelist.txt> or <anylist.csv> | TonyB_default.ps1
+.PARAMETER computername
+one or more computername, or IP address... peace to America!
+.LINK
+       https://github.com/officecigar/windows_scripts/blob/master/serverhealth5.ps1
+ #>
+
 #################################################################################
 # get all the servers in your domain
 #
