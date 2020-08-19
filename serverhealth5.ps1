@@ -1,54 +1,40 @@
 #################################################################################
-# get all the servers in your domain and output to a txt file and clean txt file by removing spaces and blanks lines.
+# get all the servers in your domain
 #
 ################################################################################
- $starttime =Get-Date
+$starttime =Get-Date
+$whatdomain = Get-ADDomain | Select-Object dnsroot | ForEach-Object {$_.dnsroot}
 
 $adserverlist = Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' ` -Properties dnshostname | Sort-Object -Property Operatingsystem |Select-Object -Property dnshostname | ForEach-Object {$_.dnshostname   }
-$adserverlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\serverlist.txt"
+$adserverlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\$whatdomain.serverlist.txt"
 
-$ServerInputFile = 'C:\temp\serverlist.txt'
-sleep 3
-write-host "Please wait cleaning up text file by removing spaces... file name le $ServerInputFile"
-$content = Get-Content $ServerInputFile
-
+$ServerInputFile = "C:\temp\$whatdomain.serverlist.txt"
 
 
 #################################################################################
 # server list is in being imported and beginning grabbing number of CPU, total ram count, C:\ drive Frees DISK space, averages for CPU usage, & averages for memory  usage
 #
 ################################################################################
-$ServerListFilePath = "C:\temp\serverlist.txt"
-$ServerList = Get-Content $ServerListFilePath 
-$ReportFilePath = "C:\temp\Report.html"
+#$ServerListFilePath = "C:\temp\$whatdomain.serverlist.txt"
+$ServerList = Get-Content "C:\temp\$whatdomain.serverlist.txt"                  #$ServerListFilePath 
+$ReportFilePath = "C:\temp\$whatdomain.Report.html"
 $Result = @()
 
 
 ForEach($ComputerName in $ServerList)
 {$ComputerName
 
-$AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average | Select Average
-
-#$OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
-
-
-
+$AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average | Select Average 
 $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
 $totalVol = Get-WmiObject -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
 $lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 05 | Sort-Object -Descending
 $LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 05 | Sort-Object -Descending
-
-
 $LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime
-
 $myboot = [System.Management.ManagementDateTimeConverter]::ToDateTime($LastBootUpTime)
-
 $totalCPuCount = Get-WmiObject -class Win32_ComputerSystem -ComputerName $ComputerName
 $Sockets=$totalCPuCount.numberofprocessors
 $Cores=$totalCPuCount.numberoflogicalprocessors
-
 $PysicalMemory = [Math]::Round((Get-WmiObject -Class Win32_ComputerSystem -ComputerName $ComputerName).TotalPhysicalMemory/1GB)
-
 $windowsVersions =(Get-WmiObject -class Win32_OperatingSystem -ComputerName $ComputerName).Caption
 
   if (Test-Connection -ComputerName $ComputerName -Count 1 ){
@@ -87,7 +73,8 @@ $windowsVersions =(Get-WmiObject -class Win32_OperatingSystem -ComputerName $Com
 #
 ################################################################################
 
-$company = "CHC"
+ 
+$starttime
 
 $Result += [PSCustomObject] @{
 
@@ -100,7 +87,7 @@ $Result += [PSCustomObject] @{
         CDrive = $vol.'C PercentUsed'
 
         CCapacity = $totalVol.'C Capacity'
-        
+
         TotalCPUCount= $Cores
 
         totalMemCount= $PysicalMemory
@@ -125,16 +112,13 @@ $Result += [PSCustomObject] @{
 # building HTML file with the Columns &  loading the data into HTML file
 #
 ################################################################################
-    $OutputReport = "<HTML><TITLE>Server Health Report</TITLE>
+    $OutputReport = "<HTML><TITLE>$whatdomain Server Health Report </TITLE>
 
                      <BODY>
 
                      <font color =""#99000"">
 
-                      <font color =""#99000"">
-
                      <H2><B>Current Domain: $whatdomain - Script total time: $total </B></H2></font>
-                     <H2><B>Script started at: $starttime and Script ended at: $endtime </B></H2></font>
                      <H2><B>Weekly Server Health Check Report</B></H2></font>
                      <Table border=2 cellpadding=4 cellspacing=3>
 
@@ -146,8 +130,8 @@ $Result += [PSCustomObject] @{
 
                        <TD><B> Avg. Memory Usage</B></TD>
 
-                       <TD><B>Free DiskSpace c:\</B></TD>
-                       
+                       <TD><B>Total Free DiskSpace C:\</B></TD>
+
                        <TD><B>Total C:\ Capacity</B></TD>
 
                        <TD><B>Total #  CPUs</B></TD>
@@ -184,8 +168,8 @@ $Result += [PSCustomObject] @{
           $MemAsPercent = "$($Entry.MemLoad)%"
 
           $CDriveAsPercent = "$($Entry.CDrive)"
-          
           $CCapacitydrive = "$($Entry.CCapacity)"
+
 
           $TCPUCount="$($Entry.TotalCPUCount)"
 
@@ -296,6 +280,8 @@ $Result += [PSCustomObject] @{
 
 
 
+
+
 ################################################################################
 # C  drive capacity  
 
@@ -322,8 +308,6 @@ $Result += [PSCustomObject] @{
               $OutputReport += "<TD bgcolor=lightgreen align=center>$($CCapacitydrive)</TD>"
 
           } 
-          
-          
  
 
 #################################################################################
@@ -415,7 +399,8 @@ $Result += [PSCustomObject] @{
 
  
 
-           # OS Version
+#################################################################################
+## OS Version
               
 
             if(($Entry.OSVersion) -eq  " Microsoft Windows Server 2008 Standard")
@@ -578,7 +563,9 @@ $Result += [PSCustomObject] @{
 
  
 
-    $OutputReport += "</Table></BODY></HTML>"
+    $OutputReport += "</Table></BODY><H2>
+    <B>Script started at: $starttime</B></H2>
+    <B>Script ended at:   $endtime</B></H2></font></HTML>"
 
 }
 
