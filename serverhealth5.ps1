@@ -134,9 +134,8 @@ $Result += [PSCustomObject] @{
                      <BODY>
 
                      <font color =""#99000"">
-
                      <H2><B>Current Domain: $whatdomain </B></H2></font>
-                     <H2><B>Daily Server Health Check Report</B></H2></font>
+                     <H2><B>Daily Health Check Report</B></H2></font>
                      <Table border=2 cellpadding=4 cellspacing=3>
 
                      <TR bgcolor=D1D0CE align=center>
@@ -581,9 +580,9 @@ $Result += [PSCustomObject] @{
  
 
     $OutputReport += "</Table></BODY><H2>
-    <B>Script started at: $starttime</B></H2>
-    <B>Script ended at:   $endtime</B>
-    <B>Script total time: $total</H2></font></HTML>"
+    <TD><B>Script started at: $starttime</B></TD> 
+    <TD><B>Script ended at:   $endtime</B></TD> 
+    <TD><B>Script total time: $total</B></TD></font></HTML>"
 
 }
 
