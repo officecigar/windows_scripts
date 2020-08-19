@@ -45,8 +45,8 @@ $AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-O
 $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
 $OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
 $totalVol = Get-WmiObject -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
-$lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 05 | Sort-Object -Descending
-$LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 05 | Sort-Object -Descending
+$lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 03 | Sort-Object -Descending
+$LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 03 | Sort-Object -Descending
 $LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime
 $myboot = [System.Management.ManagementDateTimeConverter]::ToDateTime($LastBootUpTime)
 $totalCPuCount = Get-WmiObject -class Win32_ComputerSystem -ComputerName $ComputerName
@@ -136,8 +136,8 @@ $Result += [PSCustomObject] @{
 
                      <font color =""#99000"">
 
-                     <H2><B>Current Domain: $whatdomain - Script total time: $total </B></H2></font>
-                     <H2><B>Weekly Server Health Check Report</B></H2></font>
+                     <H2><B>Current Domain: $whatdomain </B></H2></font>
+                     <H2><B>Daily Health Check Report</B></H2></font>
                      <Table border=2 cellpadding=4 cellspacing=3>
 
                      <TR bgcolor=D1D0CE align=center>
