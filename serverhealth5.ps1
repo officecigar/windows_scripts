@@ -565,7 +565,8 @@ $Result += [PSCustomObject] @{
 
     $OutputReport += "</Table></BODY><H2>
     <B>Script started at: $starttime</B></H2>
-    <B>Script ended at:   $endtime</B></H2></font></HTML>"
+    <B>Script ended at:   $endtime</B>
+    <B>Script total time: $total</H2></font></HTML>"
 
 }
 
