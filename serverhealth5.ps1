@@ -13,22 +13,12 @@ write-host "Please wait cleaning up text file by removing spaces... file name le
 $content = Get-Content $ServerInputFile
 
 
-$adOSlist = Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' ` -Properties  Operatingsystem | Sort-Object -Property Operatingsystem |Select-Object -Property  Operatingsystem | ForEach-Object {$_.Operatingsystem   }
-$adOSlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\osList.txt"
-
-$OSInputFile = 'C:\temp\osList.txt'
-sleep 3
-write-host "Please wait cleaning up text file by removing spaces... file name le $OSInputFile"
-$content = Get-Content $OSInputFile
-
-
 
 #################################################################################
 # server list is in being imported and beginning grabbing number of CPU, total ram count, C:\ drive Frees DISK space, averages for CPU usage, & averages for memory  usage
 #
 ################################################################################
 $ServerListFilePath = "C:\temp\serverlist.txt"
-$ossystems = Get-Content "C:\temp\OSlist.txt"
 $ServerList = Get-Content $ServerListFilePath 
 $ReportFilePath = "C:\temp\Report.html"
 $Result = @()
@@ -40,10 +30,7 @@ ForEach($ComputerName in $ServerList)
 $AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average | Select Average
 
 #$OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
-foreach($ossystem in $ossystems)
-{
-$OS = $ossystem
-}
+
 
 
 $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } }
