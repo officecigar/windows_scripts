@@ -1,4 +1,4 @@
- <#
+<#
 .SYNOPSIS
 Think powershell think Mr-ITpro.com !!! FUN STUFF
 .EXAMPLE
@@ -19,14 +19,13 @@ one or more computername, or IP address... peace to America!
 # get all the servers in your domain
 #
 ################################################################################
-$starttime =Get-Date
+$starttime = Get-Date
 $whatdomain = Get-ADDomain | Select-Object dnsroot | ForEach-Object {$_.dnsroot}
 
 $adserverlist = Get-ADComputer -Filter 'operatingsystem -like "*server*" -and enabled -eq "true"' ` -Properties dnshostname | Sort-Object -Property Operatingsystem |Select-Object -Property dnshostname | ForEach-Object {$_.dnshostname   }
 $adserverlist | ft -AutoSize -HideTableHeaders | Out-File "C:\temp\$whatdomain.serverlist.txt"
-
 $ServerInputFile = "C:\temp\$whatdomain.serverlist.txt"
-
+sleep 3
 
 #################################################################################
 # server list is in being imported and beginning grabbing number of CPU, total ram count, C:\ drive Frees DISK space, averages for CPU usage, & averages for memory  usage
@@ -130,42 +129,27 @@ $Result += [PSCustomObject] @{
 #
 ################################################################################
     $OutputReport = "<HTML><TITLE>$whatdomain Server Health Report </TITLE>
-
                      <BODY>
-
                      <font color =""#99000"">
                      <H2><B>Current Domain: $whatdomain </B></H2></font>
                      <H2><B>Daily Health Check Report</B></H2></font>
                      <Table border=2 cellpadding=4 cellspacing=3>
-
                      <TR bgcolor=D1D0CE align=center>
-
                        <TD><B>Server</B></TD>
-
-                       <TD><B>Avg.CPU Usage</B></TD>
-
-                       <TD><B> Avg. Memory Usage</B></TD>
-
+                       <TD><B>Current Avg. CPU Usage</B></TD>
+                       <TD><B>Current Avg. Memory Usage</B></TD>
                        <TD><B>Total Free DiskSpace C:\</B></TD>
-
-                       <TD><B>Total C:\ Capacity</B></TD>
-
-                       <TD><B>Total #  CPUs</B></TD>
-
+                       <TD><B>Total Diskspace Capacity of C:\ </B></TD>
+                       <TD><B>Total Number  CPUs</B></TD>
                         <TD><B>Total RAM</B></TD>
-
                         <TD><B>Last Reboot Time</B></TD>
-
                          <TD><B>OS Version</B></TD>
                          
-                        <TD><B>Server up or down</B></TD> 
-
+                        <TD><B>Server Up or Down</B></TD> 
                         <TD><B>Virtual or Physical</B></TD> 
                         
                         <TD><B>Last KB</B></TD>
-
                         <TD><B>Last Patch date</B></TD>
-
                           
                          
                                                  
@@ -212,7 +196,7 @@ $Result += [PSCustomObject] @{
 ################################################################################
 # check CPU load
 
-          if(($Entry.CPULoad) -eq '%')
+          if(($Entry.CPULoad) -ge 60)
 
           {
 
@@ -220,7 +204,7 @@ $Result += [PSCustomObject] @{
 
           }
 
-          elseif((($Entry.CPULoad) -ge 100) -and (($Entry.CPULoad) -lt 90))
+          elseif((($Entry.CPULoad) -ge 50) -and (($Entry.CPULoad) -lt 59))
 
           {
 
@@ -242,7 +226,7 @@ $Result += [PSCustomObject] @{
 #################################################################################
 # check RAM load
 
-          if(($Entry.MemLoad) -eq "10")
+          if(($Entry.MemLoad) -ge 70)
 
           {
 
@@ -250,7 +234,7 @@ $Result += [PSCustomObject] @{
 
           }
 
-          elseif((($Entry.MemLoad) -ge 79) -and (($Entry.MemLoad) -lt 90))
+          elseif((($Entry.MemLoad) -ge 50) -and (($Entry.MemLoad) -lt 59))
 
           {
 
@@ -301,7 +285,7 @@ $Result += [PSCustomObject] @{
 ################################################################################
 # C  drive capacity  
 
-          if(($Entry.CCapacity) -eq '0')
+          if(($Entry.CCapacity) -le 2)
 
           {
 
@@ -309,7 +293,7 @@ $Result += [PSCustomObject] @{
 
           }
 
-          elseif((($Entry.CCapacity) -ge 40) -and (($Entry.CCapacity) -lt 100))
+          elseif((($Entry.CCapacity) -gt 2) -and (($Entry.CCapacity) -le 10))
 
           {
 
@@ -329,7 +313,7 @@ $Result += [PSCustomObject] @{
 #################################################################################
 # check CPU Count
 
-          if(($Entry.TotalCPUCount) -ge 99)
+          if(($Entry.TotalCPUCount) -lt 2)
 
           {
 
@@ -337,7 +321,7 @@ $Result += [PSCustomObject] @{
 
           }
 
-          elseif((($Entry.TCPUCount) -ge 1) -and (($Entry.TCPUCount) -lt 1))
+          elseif((($Entry.TCPUCount) -ge 2) -and (($Entry.TCPUCount) -lt 4))
 
           {
 
@@ -366,7 +350,7 @@ $Result += [PSCustomObject] @{
 
           }
 
-          elseif((($Entry.totalMemCount) -ge "2.1") -and (($Entry.totalMemCount) -lt 3))
+          elseif((($Entry.totalMemCount) -ge "2") -and (($Entry.totalMemCount) -le 4))
 
           {
 
@@ -486,7 +470,7 @@ $Result += [PSCustomObject] @{
 
           }
 
-          elseif((($Entry.VirtulorPhysical) -ne "VMware, Inc.") -and (($Entry.VirtulorPhysical) -ne  "VMware, Inc."))
+          elseif((($Entry.VirtulorPhysical) -ne "VMware, Inc.") -and (($Entry.VirtulorPhysical) -ne  "Nutanix"))
 
           {
 
@@ -577,12 +561,14 @@ $Result += [PSCustomObject] @{
 
     }
 
- 
+ sleep 2
 
-    $OutputReport += "</Table></BODY><H2>
-    <TD><B>Script started at: $starttime</B></TD> 
-    <TD><B>Script ended at:   $endtime</B></TD> 
-    <TD><B>Script total time: $total</B></TD></font></HTML>"
+    $OutputReport += "</Table></BODY>
+    <p>Script started at: $starttime </p>
+    <p>Script ended at:   $endtime</p> 
+    <p>Script total time: $total</p></font>
+   </HTML>"
+
 
 }
 
