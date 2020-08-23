@@ -124,7 +124,14 @@ Write-Host "throw 'Action did not complete before timeout period."
 Write-Verbose -Message 'Action completed before the timeout period.'
 }
 
+if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $totalCPuCount = Get-WmiObject -class Win32_ComputerSystem -ComputerName $ComputerName 
+
+Write-Host "throw 'Action did not complete before timeout period."
+
+} else {
+Write-Verbose -Message 'Action completed before the timeout period.'
+}
 
 
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
