@@ -48,62 +48,104 @@ ForEach($ComputerName in $ServerList)
      $PingStatus= "Down"
   }
 
-  $Timeout = 5 
+  $Timeout = 10 
   $timer = [Diagnostics.Stopwatch]::StartNew()
   $timer.Stop()
 
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $AVGProc = Get-WmiObject -computername  $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average  | Select Average 
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } } 
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
+
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $totalVol = Get-WmiObject -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 03 | Sort-Object -Descending 
+
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 03 | Sort-Object -Descending 
+
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime 
+
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
+
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $myboot = [System.Management.ManagementDateTimeConverter]::ToDateTime($LastBootUpTime)
+
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
-if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
+
 $totalCPuCount = Get-WmiObject -class Win32_ComputerSystem -ComputerName $ComputerName 
-} else {
-}
+
+
 if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
 $Sockets=$totalCPuCount.numberofprocessors
+
+Write-Host "throw 'Action did not complete before timeout period."
+
 } else {
+Write-Verbose -Message 'Action completed before the timeout period.'
 }
-if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
+
+
 $Cores=$totalCPuCount.numberoflogicalprocessors
-} else {
-}
-if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
+
+
+
 $PysicalMemory = [Math]::Round((Get-WmiObject -Class Win32_ComputerSystem -ComputerName $ComputerName).TotalPhysicalMemory/1GB)
-} else {
-}
-if ($timer.Elapsed.TotalSeconds -gt $Timeout) {
+
+
+
 $windowsVersions =(Get-WmiObject -class Win32_OperatingSystem -ComputerName $ComputerName).Caption
-} else {
-}
 
   
 
@@ -124,13 +166,11 @@ $windowsVersions =(Get-WmiObject -class Win32_OperatingSystem -ComputerName $Com
   }
  
 
- function example-function {
 
- }
  
 
 
-function test{
+
 #################################################################################
 # building new object classes for HTML 
 #
@@ -619,7 +659,7 @@ $Result += [PSCustomObject] @{
 
 }
 
- }
+ 
 
 $OutputReport | out-file $ReportFilePath
 
