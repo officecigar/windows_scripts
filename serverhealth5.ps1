@@ -35,7 +35,6 @@ $ServerList = Get-Content "C:\temp\$whatdomain.serverlist.txt"
 $ReportFilePath = "C:\temp\$whatdomain.Report.html"
 $Result = @()
 
-
 ForEach($ComputerName in $ServerList)
 {$ComputerName
 
@@ -48,25 +47,54 @@ ForEach($ComputerName in $ServerList)
      $PingStatus= "Down"
   }
 
+#################################################################################
+# running commandlets as job to bypass some RPC errors to speed the script up 
+#
+################################################################################
+$AVGProc =  gwmi win32_processor -computername $ComputerName -AsJob 
+Wait-Job $AVGProc.Id   -Timeout 5 # times out after 5 seconds
+#Measure-Object -property LoadPercentage -Average | Select Average 
+$AVGProc = Receive-Job $AVGProc.Id | Measure-Object -property LoadPercentage -Average | Select Average 
 
-$AVGProc = Get-WmiObject -computername $ComputerName win32_processor | Measure-Object -property LoadPercentage -Average | Select Average 
-$vol = Get-WmiObject -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } } 
-$OS = gwmi -Class win32_operatingsystem -computername $ComputerName | Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
-$totalVol = Get-WmiObject -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
-$lastpatch = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 03 | Sort-Object -Descending 
-$LatestPatchInformation = Get-WmiObject -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 03 | Sort-Object -Descending 
-$LastBootUpTime= Get-WmiObject Win32_OperatingSystem -ComputerName $ComputerName  | Select -Exp LastBootUpTime 
+$vol = gwmi -Class win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'" -AsJob 
+Wait-Job $vol.Id   -Timeout 5 # times out after 5 seconds 
+$vol = Receive-Job $vol.Id | Select-object @{Name = "C PercentUsed"; Expression = {“{0:N2}”   -f ($_.freespace/1GB) } } 
+
+$OS = gwmi -Class win32_operatingsystem -computername $ComputerName -AsJob 
+Wait-Job $OS.Id   -Timeout 5 # times out after 5 seconds
+$OS= Receive-Job $OS.Id |  Select-Object @{Name = "MemoryUsage"; Expression = {“{0:N2}” -f ((($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)*100)/ $_.TotalVisibleMemorySize) }}
+
+$totalVol = gwmi -class Win32_Volume -ComputerName $ComputerName -Filter "DriveLetter = 'C:'"  -AsJob
+Wait-Job $totalVol.Id   -Timeout 5 # times out after 5 seconds
+$totalVol= Receive-Job $totalVol.Id | Select-Object @{Name="C Capacity";Expression = {“{0:N2}”  -f ($_.Capacity/1GB) }} 
+
+
+$lastpatch = gwmi -Class Win32_QuickFixEngineering -ComputerName $ComputerName | Select-object -Property installedon | ForEach-Object {$_.installedon   }  | select -last 03 | Sort-Object -Descending 
+
+
+$LatestPatchInformation = gwmi -Class Win32_QuickFixEngineering -ComputerName $ComputerName -AsJob
+Wait-Job $LatestPatchInformation.Id   -Timeout 7 # times out after 7 seconds
+$LatestPatchInformation= Receive-Job $LatestPatchInformation.Id | Select-object -Property hotfixid | ForEach-Object {$_.hotfixid   }  | select -Last 03 | Sort-Object -Descending 
+
+$LastBootUpTime= gwmi Win32_OperatingSystem -ComputerName $ComputerName  -AsJob
+Wait-Job $LastBootUpTime.Id   -Timeout 7   # times out after 7 seconds
+$LastBootUpTime= Receive-Job $LastBootUpTime.Id | Select -Exp LastBootUpTime 
+
+
 $myboot = [System.Management.ManagementDateTimeConverter]::ToDateTime($LastBootUpTime)
-$totalCPuCount = Get-WmiObject -class Win32_ComputerSystem -ComputerName $ComputerName   
-$Sockets=$totalCPuCount.numberofprocessors
+$totalCPuCount = gwmi -class Win32_ComputerSystem -ComputerName $ComputerName -AsJob
+Wait-Job $totalCPuCount.Id   -Timeout 5   # times out after 5 seconds
+
+$totalCPuCount= Receive-Job $totalCPuCount.Id
+$Sockets=$totalCPuCount.numberofprocessors 
 $Cores=$totalCPuCount.numberoflogicalprocessors
-$PysicalMemory = [Math]::Round((Get-WmiObject -Class Win32_ComputerSystem -ComputerName $ComputerName).TotalPhysicalMemory/1GB)
-$windowsVersions =(Get-WmiObject -class Win32_OperatingSystem -ComputerName $ComputerName).Caption
+$PysicalMemory = [Math]::Round((gwmi -Class Win32_ComputerSystem -ComputerName $ComputerName).TotalPhysicalMemory/1GB) 
+$windowsVersions =(gwmi -class Win32_OperatingSystem -ComputerName $ComputerName).Caption
 
+$virtualorPhysical = gwmi -Class Win32_ComputerSystem -ComputerName $ComputerName -AsJob
+Wait-Job $virtualorPhysical.Id   -Timeout 5 # times out after 5 seconds
+$virtualorPhysical= Receive-Job $virtualorPhysical.Id | Select-Object Manufacturer | ForEach-Object {$_.Manufacturer} 
 
-  
-
- $virtualorPhysical = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $ComputerName | Select-Object Manufacturer | ForEach-Object {$_.Manufacturer} 
  $virtual ="VMware, Inc."
  $virtual1 ="Manufacturer : VMware, Inc."
  
@@ -548,7 +576,8 @@ $Result += [PSCustomObject] @{
 
 
 
-
+$endtime =Get-Date
+$total= $endtime -$starttime
 
 
 
@@ -568,7 +597,6 @@ $Result += [PSCustomObject] @{
 
     $OutputReport += "</Table></BODY>
     <p>Script started at: $starttime </p>
-    <p>Script ended at:   $endtime</p> 
     <p>Script total time: $total</p></font>
    </HTML>"
 
@@ -579,8 +607,9 @@ $Result += [PSCustomObject] @{
 
 $OutputReport | out-file $ReportFilePath
 
-$endtime =Get-Date
-$total= $endtime -$starttime
+
 Write-host "Total Script time to run $total" -ForegroundColor Yellow | ft -AutoSize 
 
 Invoke-Expression $ReportFilePath
+
+
