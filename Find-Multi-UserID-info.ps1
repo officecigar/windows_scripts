@@ -1,5 +1,4 @@
-﻿
- <#
+﻿<#
 .SYNOPSIS
 Think powershell think Mr-ITpro.com !!! FUN STUFF
 .EXAMPLE
