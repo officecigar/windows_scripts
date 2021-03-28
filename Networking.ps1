@@ -55,7 +55,7 @@ Write-Host "  "
 Write-Host "###########################################################" 
 Write-Host "  "
 Write-Host "  "
- $host.UI.RawUI.WindowTitle = "Self Managing Scripts - Menu for Scripts "
+ $host.UI.RawUI.WindowTitle = "Trouble-shooting Networking - ToolxBox (Netwok Stack)"
  
 
 $processes =  ls -Path C:\scripts\TonyB\toolsbox\Networking
@@ -76,7 +76,7 @@ if ($selection -eq $null){
 
 Get-ChildItem -Path C:\scripts\TonyB\toolsbox\Networking  -name $selection | Start-Process PowerShell.exe -argument "-noexit -nologo -noprofile -command C:\scripts\TonyB\toolsbox\Networking\$selection"
 
-powershell.exe C:\scripts\TonyB\toolsbox\networkingmet1.ps1 
+powershell.exe C:\scripts\TonyB\toolsbox\networking.ps1 
 
 
 #start-process powershell.exe -argument "-noexit -nologo -noprofile -command  c:\temp  $selection"

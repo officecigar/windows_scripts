@@ -30,18 +30,24 @@ one or more computername, or IP address... peace to America!
 begin{
 $host.UI.RawUI.WindowTitle = "Trouble Shooting Info "
 
-$day = Read-Host "how many days do you want to go back for patches"
+#$day = Read-Host "how many days do you want to go back for patches"
 
+
+Write-Host "Please wait this may take a few Minutes..."
+    
 }
 
 
 
 
 process{
-  $schedtest=  foreach ($computer in $computername) {
 
 
-        Write-Verbose "about to query $computer"
+
+    foreach ($computer in $computername) {
+
+
+        #Write-Verbose "about to query $computer"
         try    {
                 $who = Get-WMIObject Win32_ComputerSystem -computername $computer| Select-Object -ExpandProperty name 
         
@@ -49,16 +55,15 @@ process{
                             $computer | Out-File $errorlogpath -append
                         }
                     $starttime =Get-Date
-                   
-                    $configs= Get-WindowsFeature | ? { $_.Installed } | ft -AutoSize  
+                    $myTop10process=  Get-Process | Sort CPU -descending | Select -first 10 -Property ID,ProcessName,CPU | format-table -autosize
+                    #$configs= Get-WindowsFeature | ? { $_.Installed } | ft -AutoSize  
                     $mem=[math]::Round((Get-WmiObject -Class Win32_ComputerSystem  -computer $computer ).TotalPhysicalMemory/1GB) 
 
                      Write-Host ""
                     
-                    Get-HotFix -ComputerName $computer |?{$_.InstalledOn -gt ((Get-Date).AddDays(-$day))} | ft -AutoSize
+                    #Get-HotFix -ComputerName $computer |?{$_.InstalledOn -gt ((Get-Date).AddDays(-$day))} | ft -AutoSize
 
-                    $patchUpdates = (get-hotfix -ComputerName $computer -Description update*  | sort installedon)[-2] | ft -AutoSize
-
+                    $patchUpdates = Get-Hotfix  -ComputerName $computer  | ?{$_.InstalledOn -gt "12/31/2019" }  | Sort-Object -Descending InstalledOn | select -first 03 | select Hotfixid , installedon
 
                     $processesors = Get-WmiObject –class Win32_processor -ComputerName $computer   | select Name, NumberOfCores,NumberOfEnabledCore,NumberOfLogicalProcessors | ft -AutoSize 
 
@@ -69,6 +74,14 @@ process{
                     $logviewWarning = Get-EventLog -ComputerName $computer -LogName System  -after ([datetime]::Today)   | Where-Object {$_.EntryType -like 'Warning' } | ft -AutoSize 
 
 
+                    $LastBootUpTime = gwmi Win32_OperatingSystem -ComputerName $computer  -AsJob
+                    Wait-Job $LastBootUpTime.Id   -Timeout 7   # times out after 7 seconds
+                    $LastBootUpTime= Receive-Job $LastBootUpTime.Id | Select -Exp LastBootUpTime 
+                    $myboot = [System.Management.ManagementDateTimeConverter]::ToDateTime($LastBootUpTime)
+
+
+
+                    
                     Write-Host ""
                     Write-Host "#######################" -ForegroundColor DarkGreen
                     write-output $computer 
@@ -82,10 +95,30 @@ process{
 
                     write-output $computer  $patchSecurity
                     write-output $patchUpdates 
-
+                                                
                     write-output $logviewCritical
                     write-output $logviewWarning
                     write-output $logviewError
+                    write-host "last reboot/uptime... $myboot"
+
+
+
+
+                    Write-Host "#######################" -ForegroundColor DarkGreen
+                    write-Host "Top 10 process running"  
+                    Write-Host "#######################" -ForegroundColor DarkGreen
+                    write-output $myTop10process
+                   
+
+
+
+
+
+
+
+
+
+
 
 
            
@@ -97,6 +130,4 @@ End{
                     $total= $endtime -$starttime
                     Write-host "Total Script time to run $total" -ForegroundColor Yellow |ft -AutoSize 
 
-                    $schedtest | Out-File -FilePath C:\script\schedtesdt.txt
-
-} 
+}

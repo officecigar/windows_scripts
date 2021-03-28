@@ -47,7 +47,7 @@ $LocalOS = (Get-WmiObject -class Win32_OperatingSystem -ComputerName $Server).Ca
 
 $localCDrive  = Get-WMIObject Win32_Logicaldisk -ComputerName $Server -filter "deviceid='C:'"  | Select PSComputername,DeviceID, @{Name="SizeGB";Expression={$_.Size/1GB -as [int]}}, @{Name="FreeGB";Expression={[math]::Round($_.Freespace/1GB,2)}}
 
-$Server  = "dbnaaemo022.wpd.envoy.net"
+#$Server  = "dbnaaemo022.wpd.envoy.net"
 $LatestPatchInformation = Get-Hotfix  -ComputerName $Server  | ?{$_.InstalledOn -gt "12/05/2019" }  | Sort-Object -Descending InstalledOn | select -first 03 | select Hotfixid 
 $lastpatch =Get-Hotfix  -ComputerName $Server | ?{$_.InstalledOn -gt "12/05/2019" }  | Sort-Object -Descending InstalledOn | select -first 03 | select InstalledOn 
 
@@ -64,7 +64,7 @@ $Comment6 = "Window Version : "
 $Comment7 = "Required Software : "
 $comment8 =  "Last 3 patch dates : "
 
-$commet3 + $Server | ft -AutoSize
+$commet3 + $Server | ft -AutoSize -ForegroundColor Yellow
 $comment5 + `
 $LatestPatchInformation.Hotfixid -join ","
 $comment8 + `
