@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 get server info to trouble shoot it Updates & Logs !!! FUN STUFF
 .EXAMPLE
@@ -38,7 +38,7 @@ $day = Read-Host "how many days do you want to go back for patches"
 
 
 process{
-    foreach ($computer in $computername) {
+  $schedtest=  foreach ($computer in $computername) {
 
 
         Write-Verbose "about to query $computer"
@@ -57,7 +57,7 @@ process{
                     
                     Get-HotFix -ComputerName $computer |?{$_.InstalledOn -gt ((Get-Date).AddDays(-$day))} | ft -AutoSize
 
-                    $patchUpdates = (get-hotfix -ComputerName $computer -Description update*  | sort installedon)[-1] | ft -AutoSize
+                    $patchUpdates = (get-hotfix -ComputerName $computer -Description update*  | sort installedon)[-2] | ft -AutoSize
 
 
                     $processesors = Get-WmiObject –class Win32_processor -ComputerName $computer   | select Name, NumberOfCores,NumberOfEnabledCore,NumberOfLogicalProcessors | ft -AutoSize 
@@ -97,4 +97,6 @@ End{
                     $total= $endtime -$starttime
                     Write-host "Total Script time to run $total" -ForegroundColor Yellow |ft -AutoSize 
 
-}
+                    $schedtest | Out-File -FilePath C:\script\schedtesdt.txt
+
+} 
