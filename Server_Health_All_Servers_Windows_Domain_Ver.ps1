@@ -1173,5 +1173,5 @@ $OutputReport | out-file $ReportFilePath
 
 Write-host "Total Script time to run $total" -ForegroundColor Yellow | ft -AutoSize 
 
-Invoke-Expression $ReportFilePath
+#Invoke-Expression $ReportFilePath
 

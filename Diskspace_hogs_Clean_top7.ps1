@@ -1,14 +1,43 @@
-﻿# use the line below to test on 1 or 2 servers 
-### $servers = "cmemcfdb006.wpd.envoy.net" , "localhost"
+﻿
+
+ <#
+.SYNOPSIS
+Gets COMPUTER BIOS STATUS !!! FUN STUFF
+.EXAMPLE
+'one', 'two', 'three' Netwmi.ps1
+.EXAMPLE
+Netwmi.ps1 -computername localhost
+.EXAMPLE
+Netwmi.ps1 -computeername one, two, three
+.EXAMPLE
+get-content <ServerList.txt> or <ServerList.csv> | Netwmi.ps1
+.PARAMETER computername
+one or more computername, or IP address... peace to America!
+#>
+
+
+
+[cmdletbinding()]
+ 
+Param(
+[Parameter (Mandatory=$true,ValuefromPipeline=$true)]
+[string []]$servers
+
  
  
+)
+ begin{$host.UI.RawUI.WindowTitle = "Cleaning C drive "
+
+      }
+
+process{
 
  Start-Transcript -Path c:\temp\DiskSpaceLog.txt 
  # please add your text file to the line Below. 
- $servers = "PBNAAEAP005"  #Get-Content -Path C:\Temp\clean_disk_list.txt
+ #$servers =  #Get-Content -Path C:\Temp\clean_disk_list.txt
  foreach($server in $servers){
 
- write-host  "Checking $server for you now." -ForegroundColor Cyan
+ write-host  "Checking -computername  $server for you now." -ForegroundColor Cyan
 
 
  Invoke-Command -ComputerName $Server -ScriptBlock {
@@ -165,8 +194,6 @@ Get-ChildItem -Path C:\Windows\Propatches\Patches -File | Remove-Item -Verbose
 ######################################################## delete files in dir C:\inetpub\logs\LogFiles
 $foldersToCheck = dir C:\inetpub\logs\ | where {$_.PSiscontainer} | where{$_.Name -eq "LogFiles"}
 
-
-
 $results = foreach ($folder in $foldersToCheck) {
     $bytecount = (dir $folder.fullname -recurse  | Measure-Object -property length -sum).sum 
     switch ($bytecount)
@@ -186,6 +213,9 @@ $results
 
 #remind me to palce a 30days+ if staement here to delete file
 Get-ChildItem -Path C:\inetpub\logs\LogFiles -File | Remove-Item -Verbose
+$locations = set-Location   'C:\inetpub\logs\LogFiles'
+$GetFilesToDelete = (Get-Date).add
+$FilesToDelete = Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.CreationTime -le $GetFilesToDelete  } | Remove-Item
 
 
 
@@ -291,10 +321,23 @@ $results | sort size  -Descending |  select -first 15 |ft -AutoSize
 ######################################################## #Empty recycle bin 
 
 Clear-RecycleBin -DriveLetter C -Force
+
+}
+$mydriveTemp =Set-Location c:\temp
+$cdrivesize =Get-Location
+
+
+}
+
+
+}
+
+
+End {
+
 $localCDrive  = Get-WMIObject Win32_Logicaldisk -ComputerName $Server -filter "deviceid='C:'"  | Select PSComputername,DeviceID, @{Name="SizeGB";Expression={$_.Size/1GB -as [int]}}, @{Name="FreeGB";Expression={[math]::Round($_.Freespace/1GB,2)}}
 $localCDrive 
-
-}
-}
-
+$cdrivesize.Drive |ft -AutoSize
 Stop-Transcript 
+
+}
