@@ -214,8 +214,11 @@ $results
 #remind me to palce a 30days+ if staement here to delete file
 Get-ChildItem -Path C:\inetpub\logs\LogFiles -File | Remove-Item -Verbose
 $locations = set-Location   'C:\inetpub\logs\LogFiles'
-$GetFilesToDelete = (Get-Date).add
-$FilesToDelete = Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.CreationTime -le $GetFilesToDelete  } | Remove-Item
+$GetFilesToDelete = (Get-Date).AddDays(30)
+$FilesToDelete = Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.CreationTime -le $GetFilesToDelete  } | select -Property FullName,Length,LastWriteTime
+$FilesToDelete.count
+$FilesToDelete
+Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.CreationTime -le $GetFilesToDelete  } | Remove-Item
 
 
 
