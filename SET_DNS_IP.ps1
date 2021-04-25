@@ -34,7 +34,10 @@ begin{
         Write-Host " "
         import-Module ActiveDirectory  
         $starttime =Get-Date
-       
+   
+   $dnsserver1 = "192.168.1.1"
+   $dnsserver2 = Read-Host "enter dns server 2" 
+
     }
 
 
@@ -55,17 +58,17 @@ begin{
                                  }
                               }       
   
-            SearchOrderLocation = '10.1.1.1', '10.0.0.1'
+            $strSearchOrderLocation = "$dnsserver1", "$dnsserver2"
             $Server
           
             #$Server = get-adcomputer -filter {name -like "*"} -searchbase "ou=servers,ou=location,dc=company,dc=com"
 
             foreach ($Server in $Servers){
 
-                                            $config = Get-WmiObject -ComputerName $Server.name -class win32_networkadapterconfiguration | Where-Object { ($_.IPAddress -ne $null) }
+                                            $config = Get-WmiObject -ComputerName $Server -class win32_networkadapterconfiguration | Where-Object { ($_.IPAddress -ne $null) }
                                             $config.SetDNSServerSearchOrder($strSearchOrderLocation)
-                                            Write-Host $Server.name
-                                            resolve-dnsname $Server.Name
+                                            Write-Host $Server
+                                            resolve-dnsname $Server
 
   
                                         }
