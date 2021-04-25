@@ -215,7 +215,7 @@ $results
 #Get-ChildItem -Path C:\inetpub\logs\LogFiles -File | Remove-Item -Verbose
 $locations = set-Location   'C:\inetpub\logs\LogFiles'
 $GetFilesToDelete = (Get-Date).AddDays(-30)
-$FilesToDelete = Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.CreationTime -le $GetFilesToDelete  } | select -Property FullName,LastWriteTime
+$FilesToDelete = Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.LastWriteTime -le $GetFilesToDelete  } | select -Property FullName,LastWriteTime
 $FilesToDelete.count
 $FilesToDelete
 Get-ChildItem -Path $locations -file | Where-Object { $_.Name -like '*.log' } | Where-Object {$_.CreationTime -le $GetFilesToDelete  } | Remove-Item
